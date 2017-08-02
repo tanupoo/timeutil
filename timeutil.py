@@ -41,13 +41,24 @@ def timedelta_to_msec(delta, f_abs=False):
 
 def parse_args():
     usage = '''
-  %(prog)s [-m opt] [-z str] [-vd] STR1
+  %(prog)s [-m opt] [-z str] [-vd] STR
 
-    convert STR1 into the format specified.
+    This command converts STR into the format specified.
+    STR is a datetime string.
 
-  %(prog)s [-m opt] [-z str] [-avd] STR1 [+|-|/|x] STR2
+  %(prog)s [-m opt] [-z str] [-avd] STR1 STR2
 
-    show the result to adopt the operand into STR1 and STR2.
+    This command shows the difference of time between STR1 and STR2.
+    STR1 is a datetime string as same as STR2.
+
+  %(prog)s [-m opt] [-z str] [-avd] STR1 (+|-|/|x) STR2
+
+    This command shows the result where the operand is adopted.
+    STR1 is a datetime string.  STR2 is a string, which is the arguments
+    of the timedelta object in python.  The STR2 format is like below:
+
+      days[,seconds[,microseconds[,milliseconds[,minutes[,hours[,weeks]]]]]]
+
 '''
     desc = '''
 description:
@@ -103,6 +114,13 @@ if __name__ == "__main__" :
         dt1 = datestr_to_datetime(opt.args[0])
         ret = output_func(dt1)
     #
+    elif len(opt.args) == 2 and opt.args[1] in ["-", "+", "/", "x"]:
+        '''
+        this is the case where the 3rd argument comes from the stdin.
+        '''
+        print("NOT SUPPORTED YET")
+        exit(1)
+    #
     elif len(opt.args) == 2:
         if opt.mode == "default":
             opt.mode = "sec"
@@ -115,23 +133,23 @@ if __name__ == "__main__" :
         ret = output_func(dt1 - dt2, f_abs=opt.f_abs)
     #
     elif len(opt.args) == 3:
-        if opt.mode == "default":
-            opt.mode = "sec"
-        elif opt.mode in ["iso","ctime"]:
-            parser.print_help()
-            exit(1)
-        output_func = eval("timedelta_to_%s" % opt.mode)
-        dt1 = datestr_to_datetime(opt.args[0])
         op = opt.args[1]
-        dt2 = datestr_to_datetime(opt.args[2])
-        if op == "-":
-            ret = output_func(dt1 - dt2, f_abs=opt.f_abs)
-        elif op == "+":
-            ret = output_func(dt1 + dt2)
-        elif op == "/":
-            ret = output_func(dt1 // dt2)
-        elif op == "x":
-            ret = output_func(dt1 // dt2)
+        if op in ["-", "+"]:
+            if opt.mode == "default":
+                opt.mode = "iso"
+            dt1 = datestr_to_datetime(opt.args[0])
+            delta = datestr_to_timedelta(opt.args[2])
+            ret = eval("datetime_to_%s(dt1 %s delta)" % (opt.mode, op))
+        elif op in ["/", "x"]:
+            if opt.mode == "default":
+                opt.mode = "sec"
+            if op == "/":
+                op = "//"
+            elif op == "x":
+                op = "*"
+            dt1 = datestr_to_timestamp_msec(opt.args[0])
+            num = int(opt.args[2])
+            ret = eval("timedelta_to_%s(dt1 %s num)" % (opt.mode, op))
         else:
             parser.print_help()
             exit(1)

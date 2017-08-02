@@ -61,12 +61,19 @@ def datestr_to_datetime(s, default_tzname="GMT"):
         dt = dateutil.parser.parse(s)
     return naive_to_aware(dt, default_tzinfo=default_tzinfo)
 
+def datestr_to_timedelta(s):
+    r = re.match("[\d,\.]+$", s)
+    if not r:
+        raise("ERROR")
+    return eval("timedelta(" + s + ")")
+
 '''
 convert the datetime string into an integer timestamp in second.
 it can accept whatever dateutil.parser() can accept.
 '''
 def datestr_to_timestamp(s, default_tzname="GMT"):
     dt = datestr_to_datetime(s, default_tzname=default_tzname)
+    default_tzinfo = dateutil.tz.gettz(default_tzname)
     return datetime_to_timestamp(dt, default_tzinfo=default_tzinfo)
 
 '''
@@ -75,6 +82,7 @@ it can accept whatever dateutil.parser() can accept.
 '''
 def datestr_to_timestamp_msec(s, default_tzname="GMT"):
     dt = datestr_to_datetime(s, default_tzname=default_tzname)
+    default_tzinfo = dateutil.tz.gettz(default_tzname)
     return datetime_to_timestamp_msec(dt, default_tzinfo=default_tzinfo)
 
 if __name__ == "__main__":
