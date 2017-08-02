@@ -47,11 +47,16 @@ def datestr_to_datetime(s, default_tzname="GMT"):
     default_tzinfo = dateutil.tz.gettz(default_tzname)
     if s == "now":
         return datetime.now(default_tzinfo)
-    if re.match("[\d]+", s):
+    if re.match("[\d]+$", s):
         dt = __epoch + timedelta(0, int(s))
-    elif re.match("[\d\.]+", s):
-        ss, ms = split('.')
-        dt = __epoch + timedelta(0, int(ss), int(ms))
+    elif re.match("[\d\.]+$", s):
+        ss, micross = s.split(".")
+        zero_len = 0
+        r = re.match("0+", micross)
+        if r:
+            zero_len = len(r.group(0))
+        micross = int(micross) * 100000 / (10**zero_len)
+        dt = __epoch + timedelta(0, int(ss), micross)
     else:
         dt = dateutil.parser.parse(s)
     return naive_to_aware(dt, default_tzinfo=default_tzinfo)
@@ -72,7 +77,7 @@ def datestr_to_timestamp_msec(s, default_tzname="GMT"):
     dt = datestr_to_datetime(s, default_tzname=default_tzname)
     return datetime_to_timestamp_msec(dt, default_tzinfo=default_tzinfo)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # 2017-04-05T14:27:57.944+02:00 => 1491395277944
     print(datestr_to_timestamp_msec("2017-04-05T14:27:57.944+02:00"))
     #print(datestr_to_timestamp_msec("2017-03-24T06:53:32.502+01:00"))
