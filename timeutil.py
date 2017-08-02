@@ -32,12 +32,12 @@ def datetime_to_ctime(dt):
 def timedelta_to_sec(delta, f_abs=False):
     if f_abs:
         delta = abs(delta)
-    return delta.total_second()
+    return delta.total_seconds()
 
 def timedelta_to_msec(delta, f_abs=False):
     if f_abs:
         delta = abs(delta)
-    return delta.total_second()
+    return delta.total_seconds()
 
 def parse_args():
     usage = '''
