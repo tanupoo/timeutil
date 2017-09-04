@@ -67,12 +67,13 @@ description:
   "opt" of the -m option may be one of the following string.
 
       iso: iso8601. (default)
-      day: days
-     hour: hours
-      min: minutes
-      sec: seconds
-     msec: timestamp with miliseconds.  e.g. 1491395277944.524
+     msec: seconds with miliseconds from 00:00:00 1-Jan-1970.
+           e.g. 1491395277944.524
     ctime: ctime(3). e.g. Sat Jul 29 16:37:02 JST 2017
+      day: days from 00:00:00 1-Jan-1970.
+     hour: hours from 00:00:00 1-Jan-1970.
+      min: minutes from 00:00:00 1-Jan-1970.
+      sec: seconds from 00:00:00 1-Jan-1970.
 
   if an operand is not specified, "-" is used.
 
