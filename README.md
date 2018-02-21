@@ -1,7 +1,7 @@
 timeutil.py
 ===========
 
-yet another kichen nife for datetime.
+yet another kitchen nife for datetime.
 
 ## usage
 

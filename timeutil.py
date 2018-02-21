@@ -62,7 +62,7 @@ def parse_args():
 '''
     desc = '''
 description:
-  yet another kichen nife for datetime.
+  yet another kitchen nife for datetime.
   if STR is "now", current time is used.
   "opt" of the -m option may be one of the following string.
 
