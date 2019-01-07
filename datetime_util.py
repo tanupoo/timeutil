@@ -57,7 +57,10 @@ def datestr_to_datetime(s, default_tzname="GMT"):
     if re.match("^0x[a-fA-F\d]+$", s):
         dt = __epoch + timedelta(0, int(s, 16))
     elif re.match("^[\d]+$", s):
-        dt = __epoch + timedelta(0, int(s))
+        try:
+            dt = __epoch + timedelta(0, int(s))
+        except OverflowError:
+            dt = __epoch + timedelta(0, int(s)//1000, int(s)%1000)
     elif re.match("^[\d\.]+$", s):
         ss, micross = s.split(".")
         zero_len = 0
