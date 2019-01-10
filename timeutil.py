@@ -11,6 +11,9 @@ from datetime_util import *
 def datetime_to_iso(dt):
     return dt.isoformat()
 
+def datetime_to_ctime(dt):
+    return dt.ctime()
+
 def datetime_to_day(dt):
     return datetime_to_timestamp_days(dt)
 
@@ -24,10 +27,13 @@ def datetime_to_sec(dt):
     return datetime_to_timestamp(dt)
 
 def datetime_to_msec(dt):
-    return datetime_to_timestamp_msec(dt)
+    return int(datetime_to_timestamp_usec(dt)*1000)
 
-def datetime_to_ctime(dt):
-    return dt.ctime()
+def datetime_to_usec(dt):
+    return datetime_to_timestamp_usec(dt)
+
+def datetime_to_hex(dt):
+    return "0x{:x}".format(datetime_to_sec(dt))
 
 def timedelta_to_sec(delta, f_abs=False):
     if f_abs:
@@ -67,13 +73,18 @@ description:
   "opt" of the -m option may be one of the following string.
 
       iso: iso8601. (default)
-     msec: seconds with miliseconds from 00:00:00 1-Jan-1970.
-           e.g. 1491395277944.524
     ctime: ctime(3). e.g. Sat Jul 29 16:37:02 JST 2017
       day: days from 00:00:00 1-Jan-1970.
      hour: hours from 00:00:00 1-Jan-1970.
       min: minutes from 00:00:00 1-Jan-1970.
       sec: seconds from 00:00:00 1-Jan-1970.
+     msec: miliseconds from 00:00:00 1-Jan-1970.
+           e.g. 1546919546426 if datetime object is like below:
+                datetime.datetime(2019, 1, 8, 12, 52, 26, 426765)
+     usec: seconds with microseconds from 00:00:00 1-Jan-1970.
+           e.g. 1546919546.426765 if datetime object is like below:
+                datetime.datetime(2019, 1, 8, 12, 52, 26, 426765)
+      hex: microseconds in a hex string of the big endian.
 
   if an operand is not specified, "-" is used.
 
@@ -87,7 +98,7 @@ description:
     p.add_argument("args", metavar="ARGs [...]", type=str, nargs="*",
         help="a datetime string such as iso8601, ctime, timestamp, etc.")
     p.add_argument("-m", action="store", dest="mode", default="default",
-        choices = ["iso","day","hour","min","sec","msec","ctime"],
+        choices=["iso","ctime","day","hour","min","sec","msec","usec","hex"],
         help="specify the output format. default is 'iso'")
     p.add_argument("-z", action="store", dest="tzname", default="GMT",
         help="specify the name of timezone like 'Asia/Tokyo'.")

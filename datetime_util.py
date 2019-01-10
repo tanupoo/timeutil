@@ -36,8 +36,23 @@ def datetime_to_timestamp_minutes(dt, default_tzinfo=__tz_gmt):
 def datetime_to_timestamp(dt, default_tzinfo=__tz_gmt):
     return int(datetime_to_timestamp_raw(dt, default_tzinfo=default_tzinfo).total_seconds())
 
-def datetime_to_timestamp_msec(dt, default_tzinfo=__tz_gmt):
-    return int(datetime_to_timestamp_raw(dt, default_tzinfo=default_tzinfo).total_seconds() * 1000)
+def datetime_to_timestamp_usec(dt, default_tzinfo=__tz_gmt):
+    return datetime_to_timestamp_raw(dt, default_tzinfo=default_tzinfo).total_seconds()
+
+def int_to_datetime(tn):
+    '''
+    converting the number specified by tn into datetime()
+    '''
+    # XXX how to compare datetime.max ?
+    # XXX is it okey to compare 0x3afff3c2f0 directly ?
+    try:
+        return __epoch + timedelta(0, tn)
+    except OverflowError:
+        try:
+            return __epoch + timedelta(0, tn//1000, tn%1000)
+        except OverflowError:
+            msec = tn%1000000
+            return __epoch + timedelta(0, tn//1000000, msec//1000, msec%1000)
 
 '''
 convert the datetime string into an timezone-aware datetime object.
@@ -55,13 +70,12 @@ def datestr_to_datetime(s, default_tzname="GMT"):
     if s == "now":
         return datetime.now(default_tzinfo)
     if re.match("^0x[a-fA-F\d]+$", s):
-        dt = __epoch + timedelta(0, int(s, 16))
+        dt = int_to_datetime(int(s, 16))
     elif re.match("^[\d]+$", s):
-        try:
-            dt = __epoch + timedelta(0, int(s))
-        except OverflowError:
-            dt = __epoch + timedelta(0, int(s)//1000, int(s)%1000)
+        dt = int_to_datetime(int(s))
+        print(dt.__repr__())
     elif re.match("^[\d\.]+$", s):
+        # assuming that the decimal part indicates the microseconds.
         ss, micross = s.split(".")
         zero_len = 0
         r = re.match("0+", micross)
