@@ -5,67 +5,13 @@ import dateutil.tz
 import dateutil.parser
 import re
 
+"""
+datetime_util:
+    The internal timezone is always GMT.
+"""
+
 __tz_gmt = dateutil.tz.gettz("GMT")
 __epoch = datetime(1970, 1, 1, tzinfo=__tz_gmt)
-
-"""
-def naive_to_aware(dt, default_tzinfo=__tz_gmt):
-    if dt.tzinfo == None or dt.tzinfo.utcoffset(dt) == None:
-        return dt.replace(tzinfo=default_tzinfo)
-    return dt
-"""
-
-"""
-def datetime_to_timestamp_raw(dt, default_tzinfo=__tz_gmt):
-    dt_aware = naive_to_aware(dt, default_tzinfo=default_tzinfo)
-    return dt_aware.astimezone(__tz_gmt) - __epoch
-
-def datetime_to_timestamp_days(dt, default_tzinfo=__tz_gmt):
-    delta = datetime_to_timestamp_raw(dt, default_tzinfo=default_tzinfo)
-    #return delta.days
-    return delta.total_seconds()//86400
-
-def datetime_to_timestamp_hours(dt, default_tzinfo=__tz_gmt):
-    delta = datetime_to_timestamp_raw(dt, default_tzinfo=default_tzinfo)
-    return delta.total_seconds()//3600
-
-def datetime_to_timestamp_min(dt, default_tzinfo=__tz_gmt):
-    delta = datetime_to_timestamp_raw(dt, default_tzinfo=default_tzinfo)
-    return delta.total_seconds()//60
-
-def datetime_to_timestamp(dt, default_tzinfo=__tz_gmt):
-    return int(datetime_to_timestamp_raw(dt, default_tzinfo=default_tzinfo).total_seconds())
-
-def datetime_to_timestamp_usec(dt, default_tzinfo=__tz_gmt):
-    return datetime_to_timestamp_raw(dt, default_tzinfo=default_tzinfo).total_seconds()
-
-def datetime_to_iso(dt):
-    return dt.isoformat()
-
-def datetime_to_ctime(dt):
-    return dt.ctime()
-
-def datetime_to_day(dt):
-    return datetime_to_timestamp_days(dt)
-
-def datetime_to_hour(dt):
-    return datetime_to_timestamp_hours(dt)
-
-def datetime_to_min(dt):
-    return datetime_to_timestamp_minutes(dt)
-
-def datetime_to_sec(dt):
-    return datetime_to_timestamp(dt)
-
-def datetime_to_msec(dt):
-    return int(datetime_to_timestamp_usec(dt)*1000)
-
-def datetime_to_usec(dt):
-    return datetime_to_timestamp_usec(dt)
-
-def datetime_to_hex(dt):
-    return "0x{:x}".format(datetime_to_sec(dt))
-"""
 
 datestr_mode_list = [
         "iso", "iso8601",
@@ -102,7 +48,9 @@ def timedelta_to_datestr(time_delta, out_form="iso"):
     else:
         raise ValueError("unknown out_form {}.".format(out_form))
 
-def datetime_to_datestr(dt, out_form="iso"):
+def datetime_to_datestr(dt, out_form="iso", output_tzname=None):
+    if output_tzname is not None:
+        dt = dt.astimezone(dateutil.tz.gettz(output_tzname))
     if out_form in ["iso", "iso8601"]:
         return dt.isoformat("T")
     elif out_form == "ctime":
@@ -128,7 +76,7 @@ def numstr_to_datetime(tn, unit="microseconds"):
     else:
         raise ValueError("unit must be either 'seconds', 'milliseconds', or 'microseconds'.")
 
-def datestr_get_tzinfo(datestr, default_tzname):
+def tzinfo_from_datestr(datestr, default_tzname):
     """
     return datetime_string and tzinfo.
     """
@@ -142,29 +90,36 @@ def datestr_get_tzinfo(datestr, default_tzname):
     else:
         return datestr, dateutil.tz.gettz(default_tzname)
 
-def datestr_to_datetime(datestr, default_tzname="GMT", unit="seconds"):
+def datestr_to_datetime(datestr, default_tzname="GMT", replace_tz=False,
+                        unit="seconds"):
     """
     convert the datetime string into an timezone-aware datetime object.
-    acceptable string:
-        now
-        ^0x[a-fA-F\d]+$
-        ^[\d\.]+$
-        whatever dateutil.parser() can accept.
-    tzname:
-    if the datetime string doesn't have a timezone,
-    this function will add the timezone being specified.
+        datestr: datetime string, acceptable strings are:
+            now
+            ^0x[a-fA-F\d]+$
+            ^[\d\.]+$
+            whatever dateutil.parser() can accept.
+        default_tzname: will be used as the timezone name in case the datestr
+            doesn't have a timezone.
+        replace_tz: indicates to replace the timezone name by the
+            default_tzname.
+        unit: specify the unit of the datetime object converted.
     """
     if datestr == "now":
         dt = datetime.now()
+        # datetime.now() always doesn't have tzinfo.
         tzinfo = dateutil.tz.gettz(default_tzname)
     else:
-        dtstr, tzinfo = datestr_get_tzinfo(datestr, default_tzname)
+        dtstr, tzinfo = tzinfo_from_datestr(datestr, default_tzname)
         if re.match("^0x[a-fA-F\d]+$", dtstr):
             dt = numstr_to_datetime(int(dtstr, 16), unit)
         elif re.match("^[\d\.]+$", dtstr):
             dt = numstr_to_datetime(float(dtstr), unit)
         else:
             dt = dateutil.parser.parse(dtstr)
+        # replace default_tzname if needed.
+        if replace_tz is True:
+            tzinfo = dateutil.tz.gettz(default_tzname)
     return dt.replace(tzinfo=tzinfo)
 
 def datestr_to_timedelta(given_str):
@@ -175,26 +130,6 @@ def datestr_to_timedelta(given_str):
     if not r:
         raise ValueError("ERROR: arg must consist of [\\d,\\.]+")
     return eval("timedelta(" + given_str + ")")
-
-'''
-convert the datetime string into an integer timestamp in second.
-it can accept whatever dateutil.parser() can accept.
-'''
-def datestr_to_timestamp(s, default_tzname="GMT"):
-    dt = datestr_to_datetime(s, default_tzname=default_tzname)
-    default_tzinfo = dateutil.tz.gettz(default_tzname)
-    return datetime_to_timestamp(dt, default_tzinfo=default_tzinfo)
-
-'''
-convert the datetime string into an integer timestamp in microsecond.
-it can accept whatever dateutil.parser() can accept.
-'''
-"""
-def datestr_to_timestamp_msec(s, default_tzname="GMT"):
-    dt = datestr_to_datetime(s, default_tzname=default_tzname)
-    default_tzinfo = dateutil.tz.gettz(default_tzname)
-    return datetime_to_timestamp_msec(dt, default_tzinfo=default_tzinfo)
-"""
 
 if __name__ == "__main__":
     test_strings = [
