@@ -114,7 +114,10 @@ def datestr_to_datetime(datestr, default_tzname="GMT", replace_tz=False,
         if re.match("^0x[a-fA-F\d]+$", dtstr):
             dt = numstr_to_datetime(int(dtstr, 16), unit)
         elif re.match("^[\d\.]+$", dtstr):
-            dt = numstr_to_datetime(float(dtstr), unit)
+            n = float(dtstr)
+            if n > 9999999999:
+                n /= 1000
+            dt = numstr_to_datetime(n, unit)
         else:
             dt = dateutil.parser.parse(dtstr)
         # replace default_tzname if needed.
