@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from datetime import datetime, timedelta, timezone
 import dateutil.tz
 import dateutil.parser
@@ -26,36 +24,68 @@ datestr_mode_list = [
         "microseconds", "usec"
         ]
 
-def timedelta_to_datestr(time_delta, out_form="iso"):
-    if out_form in ["iso", "iso8601", "ctime"]:
+def timedelta_to_datestr(time_delta, output_form="iso", output_rounded=False,
+                         output_tzname=None):
+    if output_form in ["iso", "iso8601", "ctime"]:
         raise NotImplementedError
-    elif out_form in ["weeks", "week"]:
-        raise NotImplementedError
-    elif out_form == "hex":
+    elif output_form == "hex":
         return hex(round(time_delta.total_seconds()))
-    elif out_form in ["days", "day"]:
-        return str(time_delta.days)
-    elif out_form in ["hours", "hour"]:
-        return str(time_delta.total_seconds()/3600)
-    elif out_form in ["minutes", "min"]:
-        return str(time_delta.total_seconds()/60)
-    elif out_form in ["seconds", "sec"]:
-        return str(time_delta.total_seconds())
-    elif out_form in ["milliseconds", "msec"]:
-        return str(round(time_delta.total_seconds() / 1000, 3))
-    elif out_form in ["microseconds", "usec"]:
-        return str(round(time_delta.total_seconds() / 1000000, 6))
+    elif output_form in ["years", "year"]:
+        result = time_delta.total_seconds() / 86400 / 365   # TBD
+        if output_rounded:
+            return str(int(result))
+        else:
+            return str(round(result, 3))
+    elif output_form in ["months", "month"]:
+        result = time_delta.total_seconds() / 86400 / 30   # TBD
+        if output_rounded:
+            return str(int(result))
+        else:
+            return str(round(result, 3))
+    elif output_form in ["weeks", "week"]:
+        result = time_delta.total_seconds() / 86400 / 7
+        if output_rounded:
+            return str(int(result))
+        else:
+            return str(round(result, 3))
+    elif output_form in ["days", "day"]:
+        # equal to time_delta.days
+        result = time_delta.total_seconds() / 86400
+        if output_rounded:
+            return str(int(result))
+        else:
+            return str(round(result, 3))
+    elif output_form in ["hours", "hour"]:
+        result = time_delta.total_seconds() / 3600
+        if output_rounded:
+            return str(int(result))
+        else:
+            return str(round(result,3))
+    elif output_form in ["minutes", "min"]:
+        result = time_delta.total_seconds() / 60
+        if output_rounded:
+            return str(int(result))
+        else:
+            return str(round(result,3))
+    elif output_form in ["seconds", "sec"]:
+        return str(int(time_delta.total_seconds()))
+    elif output_form in ["milliseconds", "msec"]:
+        return str(int(time_delta.total_seconds() * 1000))
+    elif output_form in ["microseconds", "usec"]:
+        return str(int(time_delta.total_seconds() * 1000000))
     else:
-        raise ValueError("unknown out_form {}.".format(out_form))
+        raise ValueError("unknown output_form {}.".format(output_form))
 
-def datetime_to_datestr(dt, out_form="iso", output_tzname=None):
+def datetime_to_datestr(dt, output_form="iso", output_rounded=False,
+                        output_tzname=None):
     if output_tzname is not None:
         dt = dt.astimezone(dateutil.tz.gettz(output_tzname))
-    if out_form in ["iso", "iso8601"]:
+    if output_form in ["iso", "iso8601"]:
         return dt.isoformat("T")
-    elif out_form == "ctime":
+    elif output_form == "ctime":
         return dt.ctime()
-    return timedelta_to_datestr(dt - __epoch, out_form=out_form)
+    return timedelta_to_datestr(dt - __epoch, output_form=output_form,
+                                output_rounded=output_rounded)
 
 def numstr_to_datetime(tn, unit="microseconds"):
     """
@@ -153,43 +183,3 @@ if __name__ == "__main__":
     for v in test_strings:
         print(datestr_to_datetime(v[0], unit=v[1]))
 
-"""
-# 2017-04-05T14:27:57.944+02:00 => 1491395277944
-print(datestr_to_timestamp_msec("2017-04-05T14:27:57.944+02:00"))
-#print(datestr_to_timestamp_msec("2017-03-24T06:53:32.502+01:00"))
-#print(datestr_to_timestamp_msec("2017-03-24T06:53:32.50+01:00"))
-#print(datestr_to_timestamp_msec("2017-03-24T06:53:32.50"))
-#print(datestr_to_timestamp_msec("2017-03-24T06:53:32.502345"))
-#print(datestr_to_timestamp_msec("2017-03-24T06:53:32"))
-s = "20170509T12:09:45.363"
-print(s, datestr_to_timestamp_msec(s))
-
-from datetime_util import *
-
-test_strings = [
-    "2019-05-15T10:47:11.094980+00:00",
-    "2019-05-15T10:47:11.094980+09:00",
-    "2019-05-15T10:47:11.094980",
-    "2019-05-15T19:48:07",
-    "2019-05-15",
-    "2019-05-15T",
-    ]
-
-now=`date +'%Y-%m-%dT%H:%M:%S'`
-timeutil.py now
-
- timeutil.py 18:42:22.654
- 2019-05-15T18:42:22.654000+00:00
-
-timeutil.py 18:42:22.654
-timeutil.py 18:42:22.654 -m iso
-timeutil.py 18:41:12.232 -m ctime
-timeutil.py 18:41:12.232 -m day
-timeutil.py 18:41:12.232 -m hour
-timeutil.py 18:41:12.232 -m min
-timeutil.py 18:41:12.232 -m sec
-timeutil.py 18:41:12.232 -m msec
-timeutil.py 18:41:12.232 -m usec
-timeutil.py 18:41:12.232 -m hex
-#timeutil.py 18:41:12:232 -m ieee754
-"""
