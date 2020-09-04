@@ -7,17 +7,17 @@ from datetime_util import *
 default_tzname = environ.get("TZ", "GMT")
 
 usage = '''
-  %(prog)s [-m opt] [-z str] [-vd] STR
+  %(prog)s [options] STR
 
     This command converts STR into the format specified.
     STR is a datetime string.
 
-  %(prog)s [-m opt] [-z str] [-avd] STR1 STR2
+  %(prog)s [options] STR1 STR2
 
     This command shows the difference of time between STR1 and STR2.
     STR1 is a datetime string as same as STR2.
 
-  %(prog)s [-m opt] [-z str] [-avd] STR1 (+|-|/|x) STR2
+  %(prog)s [options] STR1 (+|-|/|x) STR2
 
     This command shows the result where the operand is adopted.
     STR1 is a datetime string.  STR2 is a string, which is the arguments
