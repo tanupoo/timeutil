@@ -116,9 +116,12 @@ def tzinfo_from_datestr(datestr, default_tzname):
             timediff = float(diff_str.replace(":","."))
             return dt_str, timezone(timedelta(hours=timediff))
         else:
-            ValueError("a timediff string must have a colon.")
+            raise ValueError("a timediff string must have a colon.")
     else:
-        return datestr, dateutil.tz.gettz(default_tzname)
+        tz = dateutil.tz.gettz(default_tzname)
+        if tz is None:
+            raise ValueError("unknown TZ name")
+        return datestr, tz
 
 def datestr_to_datetime(datestr, default_tzname="GMT", replace_tz=False,
                         unit="seconds"):
