@@ -16,6 +16,7 @@ usage = '''
 
     This command shows the difference of time between STR1 and STR2.
     STR1 is a datetime string as same as STR2.
+    "epoch" is acceptable as STR2, which means 1970-01-01T00:00:00
 
   %(prog)s [options] STR1 (+|-|/|x) STR2
 
@@ -36,14 +37,14 @@ description:
 
       iso: iso8601. (default)
     ctime: ctime(3). e.g. Sat Jul 29 16:37:02 JST 2017
-      day: days from 00:00:00 1-Jan-1970.
-     hour: hours from 00:00:00 1-Jan-1970.
-      min: minutes from 00:00:00 1-Jan-1970.
-      sec: seconds from 00:00:00 1-Jan-1970.
-     msec: miliseconds from 00:00:00 1-Jan-1970.
+      day: days from 1970-01-01T00:00:00 (epoch).
+     hour: hours from epoch.
+      min: minutes from epoch.
+      sec: seconds from epoch.
+     msec: miliseconds from epoch.
            e.g. 1546919546426 if datetime object is like below:
                 datetime.datetime(2019, 1, 8, 12, 52, 26, 426765)
-     usec: seconds with microseconds from 00:00:00 1-Jan-1970.
+     usec: seconds with microseconds from epoch.
            e.g. 1546919546.426765 if datetime object is like below:
                 datetime.datetime(2019, 1, 8, 12, 52, 26, 426765)
       hex: microseconds in a hex string of the big endian.
@@ -106,8 +107,12 @@ elif len(opt.args) == 2:
         opt.output_format = "sec"
     dt1 = datestr_to_datetime(opt.args[0], default_tzname=opt.input_tzname,
                                 replace_tz=opt.replace_tz)
-    dt2 = datestr_to_datetime(opt.args[1], default_tzname=opt.input_tzname,
-                                replace_tz=opt.replace_tz)
+    if opt.args[1] in ["epoch", "EPOCH"]:
+        arg2 = "1970-01-01T00:00:00"
+    else:
+        arg2 = opt.args[1]
+    dt2 = datestr_to_datetime(arg2, default_tzname=opt.input_tzname,
+                              replace_tz=opt.replace_tz)
     result = timedelta_to_datestr(dt1 - dt2, output_form=opt.output_format,
                                     output_tzname=opt.output_tzname)
 elif len(opt.args) == 3:
