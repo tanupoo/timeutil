@@ -98,6 +98,8 @@ if len(opt.args) == 1:
         opt.output_format = "iso"
     dt1 = datestr_to_datetime(opt.args[0], default_tzname=opt.input_tzname,
                               replace_tz=opt.replace_tz)
+    if opt.verbose:
+        print("STR1:", dt1)
     result = datetime_to_datestr(dt1, output_form=opt.output_format,
                                  output_rounded=opt.output_rounded,
                                  output_tzname=opt.output_tzname)
@@ -113,6 +115,9 @@ elif len(opt.args) == 2:
         arg2 = opt.args[1]
     dt2 = datestr_to_datetime(arg2, default_tzname=opt.input_tzname,
                               replace_tz=opt.replace_tz)
+    if opt.verbose:
+        print("STR1:", dt1)
+        print("STR2:", dt2)
     result = timedelta_to_datestr(dt1 - dt2, output_form=opt.output_format,
                                     output_tzname=opt.output_tzname)
 elif len(opt.args) == 3:
@@ -123,6 +128,9 @@ elif len(opt.args) == 3:
                                 replace_tz=opt.replace_tz)
     op = opt.args[1]
     time_delta = datestr_to_timedelta(opt.args[2])
+    if opt.verbose:
+        print("STR1:", dt1)
+        print("STR2:", time_delta)
     if op == "+":
         result = datetime_to_datestr(dt1 + time_delta,
                                      output_form=opt.output_format,
