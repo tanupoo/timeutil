@@ -4,7 +4,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from os import environ
 from datetime_util import *
 
-default_tzname = environ.get("TZ", "GMT")
+DEFAULT_TZNAME = environ.get("TZ", "GMT")
 
 usage = '''
   %(prog)s [options] STR
@@ -70,7 +70,7 @@ ap.add_argument("-r",
 ap.add_argument("--input-tz", action="store", dest="input_tzname",
                 help="specify the timezone name for the input string"
                 " in case the datetime string doesn't have any timezone."
-                f"  default is {default_tzname}")
+                f"  default is {DEFAULT_TZNAME}")
 ap.add_argument("--replace-tz", action="store_true", dest="replace_tz",
                 help="replace the timezone in the input string"
                 " into the one specified by --input-tz"
@@ -83,7 +83,9 @@ ap.add_argument("-v", action="store_true", dest="verbose",
                 help="enable verbose mode.")
 opt = ap.parse_args()
 
-if opt.output_tzname is None:
+if not opt.input_tzname:
+    opt.input_tzname = DEFAULT_TZNAME
+if not opt.output_tzname:
     opt.output_tzname = opt.input_tzname
 #
 if opt.verbose:
