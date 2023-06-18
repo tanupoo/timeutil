@@ -7,10 +7,10 @@ from datetime_util import *
 DEFAULT_TZNAME = environ.get("TZ", "GMT")
 
 usage = '''
-  %(prog)s [options] STR
+  %(prog)s [options] STR1
 
-    This command converts STR into the format specified.
-    STR is a datetime string.
+    This command converts STR1 into the format specified.
+    STR1 is a datetime string.
 
   %(prog)s [options] STR1 STR2
 
@@ -30,9 +30,20 @@ usage = '''
 
 desc = '''
 description:
-  yet another kitchen nife for datetime.
-  if STR is "now", current time is used.
-  "opt" of the -m option may be used to specify the output format.
+  yet another kitchen nife to handle the time strings.
+
+  if a string is either:
+      1. a hex string.
+      2. a number.
+      3. now will be a current time.
+      4. a iso6801 like string.
+
+  A timezone name or offset can be added at the end of the string.
+  '@' (atmark) can be used as a delimiter to specify the timezone
+  if the string is like above 1, 2, and 3,
+  For example, now@Europe/Paris, 1491391677.123@JST
+
+  the -m option may be used to specify the output format.
   It is one of the following string.
 
       iso: iso8601. (default)
@@ -48,8 +59,7 @@ description:
            e.g. 1546919546.426765 if datetime object is like below:
                 datetime.datetime(2019, 1, 8, 12, 52, 26, 426765)
       hex: microseconds in a hex string of the big endian.
-
-  if an operand is not specified, "-" is used.
+      HEX: same as hex, but will be upper case.
 
   e.g.
 '''
@@ -65,14 +75,15 @@ ap.add_argument("args", metavar="ARGs [...]", type=str, nargs="*",
 ap.add_argument("-m", action="store", dest="output_format",
                 help="specify the output format. default is 'iso'.")
 ap.add_argument("-r",
-                action="store_true", dest="output_rounded",
-                help="specify to round the output.")
-ap.add_argument("--input-tz", action="store", dest="input_tzname",
+                action="store", dest="digit",
+                type=int, default=3,
+                help="specify a digit to round the output.")
+ap.add_argument("--input-tz", action="store", dest="default_input_tzname",
                 help="specify the timezone name for the input string"
                 " in case the datetime string doesn't have any timezone."
                 f"  default is {DEFAULT_TZNAME}")
-ap.add_argument("--replace-tz", action="store_true", dest="replace_tz",
-                help="replace the timezone in the input string"
+ap.add_argument("--replace-str1-tz", action="store_true", dest="replace_str1_tz",
+                help="replace the STR1's timezone "
                 " into the one specified by --input-tz"
                 " even when the datetime has a timezone.")
 ap.add_argument("--output-tz", action="store", dest="output_tzname",
@@ -83,66 +94,61 @@ ap.add_argument("-v", action="store_true", dest="verbose",
                 help="enable verbose mode.")
 opt = ap.parse_args()
 
-if not opt.input_tzname:
-    opt.input_tzname = DEFAULT_TZNAME
-if not opt.output_tzname:
-    opt.output_tzname = opt.input_tzname
+if not opt.default_input_tzname:
+    opt.default_input_tzname = DEFAULT_TZNAME
 #
 if opt.verbose:
-    print("Input Timezone:", opt.input_tzname)
+    print("Default Input Timezone:", opt.default_input_tzname)
     print("Output Timezone:", opt.output_tzname)
-    print("Replace Timezone:", opt.replace_tz)
+    print("Replace STR1 Timezone:", opt.replace_str1_tz)
 
 # conversion
 if len(opt.args) == 1:
     #
     if opt.output_format is None:
         opt.output_format = "iso"
-    dt1 = datestr_to_datetime(opt.args[0], default_tzname=opt.input_tzname,
-                              replace_tz=opt.replace_tz)
+    dt1 = str_to_datetime(opt.args[0], default_tzname=opt.default_input_tzname)
+    if opt.replace_str1_tz:
+        dt1 = dt1.replace(tzinfo=tzinfo_from_tzstr(opt.default_input_tzname))
     if opt.verbose:
         print("STR1:", dt1)
-    result = datetime_to_datestr(dt1, output_form=opt.output_format,
-                                 output_rounded=opt.output_rounded,
-                                 output_tzname=opt.output_tzname)
+    result = datetime_to_str(dt1, output_form=opt.output_format, digit=opt.digit,
+                             output_tzname=opt.output_tzname)
 elif len(opt.args) == 2:
     #
     if opt.output_format is None:
         opt.output_format = "sec"
-    dt1 = datestr_to_datetime(opt.args[0], default_tzname=opt.input_tzname,
-                                replace_tz=opt.replace_tz)
+    dt1 = str_to_datetime(opt.args[0], default_tzname=opt.default_input_tzname)
+    if opt.replace_str1_tz:
+        dt1 = dt1.replace(tzinfo=tzinfo_from_tzstr(opt.default_input_tzname))
     if opt.args[1] in ["epoch", "EPOCH"]:
         arg2 = "1970-01-01T00:00:00"
     else:
         arg2 = opt.args[1]
-    dt2 = datestr_to_datetime(arg2, default_tzname=opt.input_tzname,
-                              replace_tz=opt.replace_tz)
+    dt2 = str_to_datetime(arg2, default_tzname=opt.default_input_tzname)
     if opt.verbose:
         print("STR1:", dt1)
         print("STR2:", dt2)
-    result = timedelta_to_datestr(dt1 - dt2, output_form=opt.output_format,
+    result = timedelta_to_str(dt1 - dt2, output_form=opt.output_format,
                                     output_tzname=opt.output_tzname)
 elif len(opt.args) == 3:
     #
     if opt.output_format is None:
         opt.output_format = "iso"
-    dt1 = datestr_to_datetime(opt.args[0], default_tzname=opt.input_tzname,
-                                replace_tz=opt.replace_tz)
+    dt1 = str_to_datetime(opt.args[0], default_tzname=opt.default_input_tzname)
+    if opt.replace_str1_tz:
+        dt1 = dt1.replace(tzinfo=tzinfo_from_tzstr(opt.default_input_tzname))
     op = opt.args[1]
-    time_delta = datestr_to_timedelta(opt.args[2])
+    time_delta = str_to_timedelta(opt.args[2])
     if opt.verbose:
         print("STR1:", dt1)
         print("STR2:", time_delta)
     if op == "+":
-        result = datetime_to_datestr(dt1 + time_delta,
-                                     output_form=opt.output_format,
-                                     output_rounded=opt.output_rounded,
-                                     output_tzname=opt.output_tzname)
+        result = datetime_to_str(dt1 + time_delta, output_form=opt.output_format,
+                                 digit=opt.digit, output_tzname=opt.output_tzname)
     elif op == "-":
-        result = datetime_to_datestr(dt1 - time_delta,
-                                     output_form=opt.output_format,
-                                     output_rounded=opt.output_rounded,
-                                     output_tzname=opt.output_tzname)
+        result = datetime_to_str(dt1 - time_delta, output_form=opt.output_format,
+                                 digit=opt.digit, output_tzname=opt.output_tzname)
     else:
         ap.print_help()
         exit(1)

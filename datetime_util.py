@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
-import dateutil.tz
-import dateutil.parser
+from dateutil.tz import gettz as dtgettz
+from dateutil import parser as dtparser
 import re
 
 """
@@ -8,95 +8,88 @@ datetime_util:
     The internal timezone is always GMT.
 """
 
-__tz_gmt = dateutil.tz.gettz("GMT")
+__tz_gmt = dtgettz("GMT")
 __epoch = datetime(1970, 1, 1, tzinfo=__tz_gmt)
 
+# this is intended to use by argparser().
 datestr_mode_list = [
-        "iso", "iso8601",
-        "ctime",
-        "hex",
-        "weeks", "week",
-        "days", "day",
-        "hours", "hour",
-        "minutes", "min",
-        "seconds", "sec",
-        "milliseconds", "msec",
-        "microseconds", "usec"
-        ]
+    "iso", "iso8601",
+    "ctime",
+    "hex",
+    "weeks", "week",
+    "days", "day",
+    "hours", "hour",
+    "minutes", "min",
+    "seconds", "sec",
+    "milliseconds", "msec",
+    "microseconds", "usec"
+    ]
 
-def timedelta_to_datestr(time_delta, output_form="iso", output_rounded=False,
-                         output_tzname=None):
+def timedelta_to_str(time_delta, output_form="iso", digit=3, output_tzname=None):
+    """
+    digit: the number of digits in the string.
+        the output is rounded if the digit is 0.
+    """
     if output_form in ["iso", "iso8601", "ctime"]:
         raise NotImplementedError
     elif output_form == "hex":
-        return hex(round(time_delta.total_seconds()))
-    elif output_form in ["years", "year"]:
-        result = time_delta.total_seconds() / 86400 / 365   # TBD
-        if output_rounded:
-            return str(int(result))
-        else:
-            return str(round(result, 3))
-    elif output_form in ["months", "month"]:
-        result = time_delta.total_seconds() / 86400 / 30   # TBD
-        if output_rounded:
-            return str(int(result))
-        else:
-            return str(round(result, 3))
-    elif output_form in ["weeks", "week"]:
-        result = time_delta.total_seconds() / 86400 / 7
-        if output_rounded:
-            return str(int(result))
-        else:
-            return str(round(result, 3))
-    elif output_form in ["days", "day"]:
-        # equal to time_delta.days
-        result = time_delta.total_seconds() / 86400
-        if output_rounded:
-            return str(int(result))
-        else:
-            return str(round(result, 3))
-    elif output_form in ["hours", "hour"]:
-        result = time_delta.total_seconds() / 3600
-        if output_rounded:
-            return str(int(result))
-        else:
-            return str(round(result,3))
-    elif output_form in ["minutes", "min"]:
-        result = time_delta.total_seconds() / 60
-        if output_rounded:
-            return str(int(result))
-        else:
-            return str(round(result,3))
-    elif output_form in ["seconds", "sec"]:
-        return str(int(time_delta.total_seconds()))
-    elif output_form in ["milliseconds", "msec"]:
-        return str(int(time_delta.total_seconds() * 1000))
-    elif output_form in ["microseconds", "usec"]:
-        return str(int(time_delta.total_seconds() * 1000000))
+        a = int(time_delta.total_seconds()).to_bytes(4, byteorder="big")
+        return a.hex()
+    elif output_form == "HEX":
+        a = int(time_delta.total_seconds()).to_bytes(4, byteorder="big")
+        return a.hex().upper()
     else:
-        raise ValueError("unknown output_form {}.".format(output_form))
+        if output_form in ["years", "year"]:
+            result = time_delta.total_seconds() / 86400 / 365   # TBD
+        elif output_form in ["months", "month"]:
+            result = time_delta.total_seconds() / 86400 / 30   # TBD
+        elif output_form in ["weeks", "week"]:
+            result = time_delta.total_seconds() / 86400 / 7
+        elif output_form in ["days", "day"]:
+            result = time_delta.total_seconds() / 86400
+        elif output_form in ["hours", "hour"]:
+            result = time_delta.total_seconds() / 3600
+        elif output_form in ["minutes", "min"]:
+            result = time_delta.total_seconds() / 60
+        elif output_form in ["seconds", "sec"]:
+            result = time_delta.total_seconds()
+        elif output_form in ["milliseconds", "msec"]:
+            result = time_delta.total_seconds() * 1000
+        elif output_form in ["microseconds", "usec"]:
+            result = int(time_delta.total_seconds() * 1000000)
+        else:
+            raise ValueError("unknown output_form {}.".format(output_form))
+        if digit == 0:
+            return str(int(result))
+        else:
+            return str(round(result, digit))
 
-def datetime_to_datestr(dt, output_form="iso", output_rounded=False,
-                        output_tzname=None):
+def datetime_to_str(dt, output_form="iso", digit=3, output_tzname=None):
+    """
+    converts datetime into a string.
+    dt must be a timezone aware.
+    if rounding is True, the output will be rounded into the form of
+    output_form.
+    converts a timezone according to the output_tzname if not None.
+    """
     if output_tzname is not None:
-        dt = dt.astimezone(dateutil.tz.gettz(output_tzname))
+        dt = dt.astimezone(dtgettz(output_tzname))
     if output_form in ["iso", "iso8601"]:
         return dt.isoformat("T")
     elif output_form == "ctime":
         return dt.ctime()
-    return timedelta_to_datestr(dt - __epoch, output_form=output_form,
-                                output_rounded=output_rounded)
+    return timedelta_to_str(dt - __epoch, output_form=output_form, digit=digit)
 
-def numstr_to_datetime(tn, unit="microseconds"):
+def num_to_datetime(tn, unit="microseconds"):
     """
-    converting the number string specified by tn into a datetime object.
+    converting the number specified by tn into a datetime object.
     the type of the number must be either int or float.
     unit specifies the unit of the number.
     seconds, milliseconds, microseconds are acceptable.
     """
     # XXX shoult be compared with datetime.max (0x3afff3c2f0) ?
     if not isinstance(tn, (int, float)):
-        raise ValueError("numstr_to_datetime() must take a number.")
+        raise ValueError("num_to_datetime() must take a number.")
     if unit == "seconds":
         return __epoch + timedelta(seconds=tn)
     elif unit == "milliseconds":
@@ -106,83 +99,99 @@ def numstr_to_datetime(tn, unit="microseconds"):
     else:
         raise ValueError("unit must be either 'seconds', 'milliseconds', or 'microseconds'.")
 
-def tzinfo_from_datestr(datestr, default_tzname):
+def tzinfo_from_tzstr(tzstr, default_tzname="GMT"):
     """
-    return datetime_string and tzinfo.
+    return tzinfo from tzstr. the valid tzstr are:
+        +TZ_OFFSET
+        -TZ_OFFSET
+        @TZ_STR
+        TZ_STR
     """
-    if datestr.find("+") > 0:
-        dt_str, diff_str = datestr.split("+")
-        if diff_str.find(":"):
-            timediff = float(diff_str.replace(":","."))
-            return dt_str, timezone(timedelta(hours=timediff))
+    if tzstr is None or tzstr == "":
+        return dtgettz(default_tzname)
+    #
+    r = re.search(r"(?P<sign>[+\-])(?P<val>[\d:]+)", tzstr)
+    if r:
+        hm = r.group("val").split(":")
+        if len(hm) == 2:
+            h = int(hm[0]) + float(hm[1])/60
+            if r.group("sign") == "-":
+                h = -h
+            return timezone(timedelta(hours=h))
+        elif len(hm) == 1:
+            return timezone(timedelta(hours=int(hm[0])))
         else:
-            raise ValueError("a timediff string must have a colon.")
-    else:
-        tz = dateutil.tz.gettz(default_tzname)
-        if tz is None:
-            raise ValueError("unknown TZ name")
-        return datestr, tz
+            raise ValueError(f"unknown TZ string {tzstr}")
+    r = re.search(r"@(?P<name>[a-zA-Z_/]+)", tzstr)
+    if r:
+        tzs = r.group("name")
+        tzinfo = dtgettz(tzs)
+        if tzinfo is None:
+            raise ValueError(f"unknown TZ string {tzs}")
+        return tzinfo
+    # otherwise, try to convert by gettz() anyway.
+    try:
+        tzinfo = dtgettz(tzstr)
+    except ValueError as e:
+        raise ValueError(f"unknown TZ string {tzstr}")
+    return tzinfo
 
-def datestr_to_datetime(datestr, default_tzname="GMT", replace_tz=False,
-                        unit="seconds"):
-    """
-    convert the datetime string into an timezone-aware datetime object.
-        datestr: datetime string, acceptable strings are:
-            now
-            ^0x[a-fA-F\d]+$
-            ^[\d\.]+$
-            whatever dateutil.parser() can accept.
-        default_tzname: will be used as the timezone name in case the datestr
-            doesn't have a timezone.
-        replace_tz: indicates to replace the timezone name by the
-            default_tzname.
-        unit: specify the unit of the datetime object converted.
-    """
-    if datestr == "now":
-        dt = datetime.now()
-        # datetime.now() always doesn't have tzinfo.
-        tzinfo = dateutil.tz.gettz(default_tzname)
-    else:
-        dtstr, tzinfo = tzinfo_from_datestr(datestr, default_tzname)
-        if re.match("^0x[a-fA-F\d]+$", dtstr):
-            dt = numstr_to_datetime(int(dtstr, 16), unit)
-        elif re.match("^[\d\.]+$", dtstr):
-            n = float(dtstr)
-            if n > 9999999999:
-                n /= 1000
-            dt = numstr_to_datetime(n, unit)
-        else:
-            dt = dateutil.parser.parse(dtstr)
-        # replace default_tzname if needed.
-        if replace_tz is True:
-            tzinfo = dateutil.tz.gettz(default_tzname)
+def str_convert_now(dtstr, tzstr, default_tzname):
+    tzinfo = tzinfo_from_tzstr(tzstr, default_tzname)
+    dt = datetime.now(tz=tzinfo)
+    return dt
+
+def str_convert_hexstr(dtstr, tzstr, default_tzname):
+    tzinfo = tzinfo_from_tzstr(tzstr, default_tzname)
+    dt = num_to_datetime(int(dtstr, 16), unit)
     return dt.replace(tzinfo=tzinfo)
 
-def datestr_to_timedelta(given_str):
+def str_convert_numstr(dtstr, tzstr, default_tzname, unit="seconds"):
+    tzinfo = tzinfo_from_tzstr(tzstr, default_tzname)
+    n = float(dtstr)
+    if n > 9999999999:
+        n /= 1000
+    dt = num_to_datetime(n, unit)
+    return dt.replace(tzinfo=tzinfo)
+
+def str_to_datetime(dttz_str, default_tzname="GMT", unit="seconds"):
+    r"""
+    convert the datetime string into an timezone-aware datetime object.
+        dttz_str: datetime string, acceptable strings are:
+            now[TZSTR]
+            0x[a-fA-F\d]+[TZSTR]
+            [\d\.]+[TZSTR]
+            whatever dateutil.parser() can accept.
+        default_tzname: will be used as the timezone name in case the dtstr
+            doesn't have a timezone.
+        unit: valid if dtstr is a number. specify the unit of datestr number.
+    """
+    patt = [
+            { "regex": r"(?P<dtstr>now)(?P<tzstr>.*)", "func": str_convert_now },
+            { "regex": r"(?P<dtstr>0x[a-fA-F0-9]+)(?P<tzstr>.*)", "func": str_convert_hexstr },
+            { "regex": r"(?P<dtstr>[\d\.]+)(?P<tzstr>.*)", "func": str_convert_numstr },
+        ]
+    try:
+        dt = dtparser.parse(dttz_str)
+    except dtparser._parser.ParserError as e:
+        for rp in patt:
+            r = re.match(rp["regex"], dttz_str)
+            if r:
+                dt = rp["func"](r.group("dtstr"), r.group("tzstr"), default_tzname)
+                return dt
+        else:
+            raise ValueError(f"ERROR: unknown format {dttz_str}")
+    else:
+        return dt
+
+def str_to_timedelta(given_str):
     """
     days[,seconds[,microseconds[,milliseconds[,minutes[,hours[,weeks]]]]]]
     """
-    r = re.match("[\d,\.]+$", given_str)
+    r = re.match(r"[\d,\.]+$", given_str)
     if not r:
         raise ValueError("ERROR: arg must consist of [\\d,\\.]+")
-    return eval("timedelta(" + given_str + ")")
-
-if __name__ == "__main__":
-    test_strings = [
-            ("1491395277", "seconds", int, 10),
-            ("1491395277123", "milliseconds", int, 10),
-            ("1491395277123456", "microseconds", int, 10),
-            ]
-    for v in test_strings:
-        print(numstr_to_datetime(v[2](v[0], v[3]), unit=v[1]))
-    test_strings = [
-            ("1491395277", "seconds", int, 10),
-            ("1491395277123", "milliseconds", int, 10),
-            ("1491395277123456", "microseconds", int, 10),
-            ("1491395277+09:00", "seconds", int, 10),
-            ("1491395277123+09:00", "milliseconds", int, 10),
-            ("1491395277123456+09:00", "microseconds", int, 10),
-            ]
-    for v in test_strings:
-        print(datestr_to_datetime(v[0], unit=v[1]))
+    params = ["days","seconds","microseconds","milliseconds","minutes","hours","weeks"]
+    args = [int(i) for i in given_str.split(",")]
+    return timedelta(**dict(zip(params,args)))
 
