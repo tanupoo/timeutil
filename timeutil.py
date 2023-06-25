@@ -29,21 +29,33 @@ usage = '''
 '''
 
 desc = '''
-description:
-  yet another kitchen nife to handle the time strings.
+Description:
 
-  if a string is either:
+  Yet another kitchen nife to handle the time strings.
+
+  If a string is either:
       1. a hex string.
       2. a number.
       3. now will be a current time.
       4. a iso6801 like string.
 
-  A timezone name or offset can be added at the end of the string.
-  '@' (atmark) can be used as a delimiter to specify the timezone
-  if the string is like above 1, 2, and 3,
-  For example, now@Europe/Paris, 1491391677.123@JST
+  Even when the time string is not formed to ISO8601, a timezone name or
+  offset can be added at the end of the string in case of above 1, 2, and 3.
+  Below is the accepted way to specify the timezone of the time string:
 
-  the -m option may be used to specify the output format.
+        TIME_STR+TZ_OFFSET
+        TIME_STR-TZ_OFFSET
+        TIME_STR@TZ_STR
+        TIME_STRTZ_STR
+
+  For example,
+
+      now@Europe/Paris
+      now-7:00
+      1671692020.652136+1:00
+      1491391677.123@America/Los_Angeles
+
+  The -m option may be used to specify the output format.
   It is one of the following string.
 
       iso: iso8601. (default)
@@ -61,7 +73,6 @@ description:
       hex: microseconds in a hex string of the big endian.
       HEX: same as hex, but will be upper case.
 
-  e.g.
 '''
 
 ap = ArgumentParser(
