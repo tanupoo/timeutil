@@ -64,6 +64,13 @@ def timedelta_to_str(time_delta, output_form="iso", digit=3, output_tzname=None)
         else:
             return str(round(result, digit))
 
+def tzname_to_tzinfo(tzstr):
+    tzinfo = dtgettz(tzstr)
+    if tzinfo is None:
+        raise ValueError(f"invalid TZ string: {tzstr}")
+    else:
+        return tzinfo
+
 def datetime_to_str(dt, output_form="iso", digit=3, output_tzname=None):
     """
     converts datetime into a string.
@@ -73,7 +80,7 @@ def datetime_to_str(dt, output_form="iso", digit=3, output_tzname=None):
     converts a timezone according to the output_tzname if not None.
     """
     if output_tzname is not None:
-        dt = dt.astimezone(dtgettz(output_tzname))
+        dt = dt.astimezone(tzname_to_tzinfo(output_tzname))
     if output_form in ["iso", "iso8601"]:
         return dt.isoformat("T")
     elif output_form == "ctime":
@@ -108,7 +115,7 @@ def tzinfo_from_tzstr(tzstr, default_tzname="GMT"):
         TZ_STR
     """
     if tzstr is None or tzstr == "":
-        return dtgettz(default_tzname)
+        return tzname_to_tzinfo(default_tzname)
     #
     r = re.search(r"(?P<sign>[+\-])(?P<val>[\d:]+)", tzstr)
     if r:
@@ -125,13 +132,13 @@ def tzinfo_from_tzstr(tzstr, default_tzname="GMT"):
     r = re.search(r"@(?P<name>[a-zA-Z_/]+)", tzstr)
     if r:
         tzs = r.group("name")
-        tzinfo = dtgettz(tzs)
+        tzinfo = tzname_to_tzinfo(tzs)
         if tzinfo is None:
             raise ValueError(f"unknown TZ string {tzs}")
         return tzinfo
     # otherwise, try to convert by gettz() anyway.
     try:
-        tzinfo = dtgettz(tzstr)
+        tzinfo = tzname_to_tzinfo(tzstr)
     except ValueError as e:
         raise ValueError(f"unknown TZ string {tzstr}")
     return tzinfo
