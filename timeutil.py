@@ -103,57 +103,74 @@ if opt.verbose:
     print("Replace STR1 Timezone:", opt.replace_str1_tz)
 
 # conversion
-if len(opt.args) == 1:
-    #
-    if opt.output_format is None:
-        opt.output_format = "iso"
-    dt1 = str_to_datetime(opt.args[0], default_tzname=opt.default_input_tzname)
-    if opt.replace_str1_tz:
-        dt1 = dt1.replace(tzinfo=tzinfo_from_tzstr(opt.default_input_tzname))
-    if opt.verbose:
-        print("STR1:", dt1)
-    result = datetime_to_str(dt1, output_form=opt.output_format, digit=opt.digit,
-                             output_tzname=opt.output_tzname)
-elif len(opt.args) == 2:
-    #
-    if opt.output_format is None:
-        opt.output_format = "sec"
-    dt1 = str_to_datetime(opt.args[0], default_tzname=opt.default_input_tzname)
-    if opt.replace_str1_tz:
-        dt1 = dt1.replace(tzinfo=tzinfo_from_tzstr(opt.default_input_tzname))
-    if opt.args[1] in ["epoch", "EPOCH"]:
-        arg2 = "1970-01-01T00:00:00"
-    else:
-        arg2 = opt.args[1]
-    dt2 = str_to_datetime(arg2, default_tzname=opt.default_input_tzname)
-    if opt.verbose:
-        print("STR1:", dt1)
-        print("STR2:", dt2)
-    result = timedelta_to_str(dt1 - dt2, output_form=opt.output_format,
-                                    output_tzname=opt.output_tzname)
-elif len(opt.args) == 3:
-    #
-    if opt.output_format is None:
-        opt.output_format = "iso"
-    dt1 = str_to_datetime(opt.args[0], default_tzname=opt.default_input_tzname)
-    if opt.replace_str1_tz:
-        dt1 = dt1.replace(tzinfo=tzinfo_from_tzstr(opt.default_input_tzname))
-    op = opt.args[1]
-    time_delta = str_to_timedelta(opt.args[2])
-    if opt.verbose:
-        print("STR1:", dt1)
-        print("STR2:", time_delta)
-    if op == "+":
-        result = datetime_to_str(dt1 + time_delta, output_form=opt.output_format,
-                                 digit=opt.digit, output_tzname=opt.output_tzname)
-    elif op == "-":
-        result = datetime_to_str(dt1 - time_delta, output_form=opt.output_format,
-                                 digit=opt.digit, output_tzname=opt.output_tzname)
+def conversion(opt):
+    if len(opt.args) == 1:
+        #
+        if opt.output_format is None:
+            opt.output_format = "iso"
+        dt1 = str_to_datetime(opt.args[0],
+                              default_tzname=opt.default_input_tzname)
+        if opt.replace_str1_tz:
+            dt1 = dt1.replace(
+                    tzinfo=tzinfo_from_tzstr(opt.default_input_tzname))
+        if opt.verbose:
+            print("STR1:", dt1)
+        result = datetime_to_str(dt1, output_form=opt.output_format,
+                                 digit=opt.digit,
+                                 output_tzname=opt.output_tzname)
+    elif len(opt.args) == 2:
+        #
+        if opt.output_format is None:
+            opt.output_format = "sec"
+        dt1 = str_to_datetime(opt.args[0],
+                              default_tzname=opt.default_input_tzname)
+        if opt.replace_str1_tz:
+            dt1 = dt1.replace(
+                    tzinfo=tzinfo_from_tzstr(opt.default_input_tzname))
+        if opt.args[1] in ["epoch", "EPOCH"]:
+            arg2 = "1970-01-01T00:00:00"
+        else:
+            arg2 = opt.args[1]
+        dt2 = str_to_datetime(arg2, default_tzname=opt.default_input_tzname)
+        if opt.verbose:
+            print("STR1:", dt1)
+            print("STR2:", dt2)
+        result = timedelta_to_str(dt1 - dt2, output_form=opt.output_format,
+                                        output_tzname=opt.output_tzname)
+    elif len(opt.args) == 3:
+        #
+        if opt.output_format is None:
+            opt.output_format = "iso"
+        dt1 = str_to_datetime(opt.args[0],
+                              default_tzname=opt.default_input_tzname)
+        if opt.replace_str1_tz:
+            dt1 = dt1.replace(
+                    tzinfo=tzinfo_from_tzstr(opt.default_input_tzname))
+        op = opt.args[1]
+        time_delta = str_to_timedelta(opt.args[2])
+        if opt.verbose:
+            print("STR1:", dt1)
+            print("STR2:", time_delta)
+        if op == "+":
+            result = datetime_to_str(dt1 + time_delta,
+                                     output_form=opt.output_format,
+                                     digit=opt.digit,
+                                     output_tzname=opt.output_tzname)
+        elif op == "-":
+            result = datetime_to_str(dt1 - time_delta,
+                                     output_form=opt.output_format,
+                                     digit=opt.digit,
+                                     output_tzname=opt.output_tzname)
+        else:
+            ap.print_help()
+            exit(1)
     else:
         ap.print_help()
         exit(1)
-else:
-    ap.print_help()
-    exit(1)
-#
-print(result)
+    #
+    return result
+
+try:
+    print(conversion(opt))
+except Exception as e:
+    print(f"ERROR: {e}")
