@@ -74,19 +74,19 @@ ap.add_argument("args", metavar="ARGs [...]", type=str, nargs="*",
                 " timestamp, etc.")
 ap.add_argument("-m", action="store", dest="output_format",
                 help="specify the output format. default is 'iso'.")
-ap.add_argument("-r",
+ap.add_argument("--rounding", "-R",
                 action="store", dest="digit",
                 type=int, default=3,
                 help="specify a digit to round the output.")
-ap.add_argument("--input-tz", action="store", dest="default_input_tzname",
+ap.add_argument("--input-tz", "-i", action="store", dest="default_input_tzname",
                 help="specify the timezone name for the input string"
                 " in case the datetime string doesn't have any timezone."
                 f"  default is {DEFAULT_TZNAME}")
-ap.add_argument("--replace-str1-tz", action="store_true", dest="replace_str1_tz",
+ap.add_argument("--replace-str1-tz", "-r", action="store_true", dest="replace_str1_tz",
                 help="replace the STR1's timezone "
                 " into the one specified by --input-tz"
                 " even when the datetime has a timezone.")
-ap.add_argument("--output-tz", action="store", dest="output_tzname",
+ap.add_argument("--output-tz", "-o", action="store", dest="output_tzname",
                 help="specify the timezone to show."
                 "  default is same as the one specified by"
                 " the --input-tz option")
